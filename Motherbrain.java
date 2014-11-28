@@ -8,7 +8,7 @@ import static robocode.util.Utils.normalRelativeAngleDegrees;
 /**
  * AndisRobot - a robot by (your name here)
  */
-public class Motherbrain extends Robot
+public class Motherbrain extends AdvancedRobot
 {
     public static final int TURN_LEFT = 0;
     public static final int TURN_RIGHT = 1;
@@ -20,26 +20,24 @@ public class Motherbrain extends Robot
 
     private int moveDir = MOVE_BACK;
 
+    private String target;
+
     /**
      * run: AndisRobot's default behavior
      */
     public void run() {
         setColors(Color.green, Color.green, Color.green);
-        setAdjustGunForRobotTurn(true);
+        setAdjustRadarForRobotTurn(true);
+        setAdjustRadarForGunTurn(true);
+
         while(true) {
-            if(getGunHeat() == 0) {
-                if(turnDir == TURN_LEFT) {
-                    turnGunLeft(10);
-                } else {
-                    turnGunRight(10);
-                }
+            setTurnRadarLeft(360);
+            if(moveDir == MOVE_BACK) {
+                setBack(300);
             } else {
-                if(moveDir == MOVE_BACK) {
-                    back(10);
-                } else {
-                    ahead(10);
-                }
+                setAhead(300);
             }
+            execute();
         }
     }
 
@@ -47,44 +45,28 @@ public class Motherbrain extends Robot
      * onScannedRobot: What to do when you see another robot
      */
     public void onScannedRobot(ScannedRobotEvent e) {
+        if(target != null) {
+            return;
+        }
+        target = e.getName();
+
         // Calculate exact location of the robot
         double absoluteBearing = getHeading() + e.getBearing();
         double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
 
-        if(e.getDistance() > 600) {
-            if(moveDir == MOVE_BACK) {
-                back(10);
-            } else {
-                ahead(10);
-            }
+        if(bearingFromGun > 0) {
+            turnGunRight(Math.abs(bearingFromGun));
         } else {
-            if (Math.abs(bearingFromGun) <= 2) {
-                fire(3);
-            } else {
-                if (bearingFromGun < 0) {
-                    turnGunLeft(1);
-                } else {
-                    turnGunRight(1);
-                }
-            }
-        }
-    }
-
-    /**
-     * onHitByBullet: What to do when you're hit by a bullet
-     */
-    public void onHitByBullet(HitByBulletEvent e) {
-        // Calculate exact location of the robot
-        double absoluteBearing = getHeading() + e.getBearing();
-        if(Math.abs(absoluteBearing) <= 3) {
-            turnLeft(10);
+            turnGunLeft(Math.abs(bearingFromGun));
         }
 
-        if(moveDir == MOVE_BACK) {
-            back(10);
+        if(getOthers() > 2) {
+            fire(1);
         } else {
-            ahead(10);
+            fire(3);
         }
+
+        target = null;
     }
 
     /**
@@ -95,7 +77,8 @@ public class Motherbrain extends Robot
     }
 
     public void onHitRobot(HitRobotEvent event) {
-        turnRight(90);
-        back(100);
+        setTurnLeft(40);
+        setBack(50);
+        execute();
     }
 }
