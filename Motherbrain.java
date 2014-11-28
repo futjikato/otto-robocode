@@ -10,17 +10,13 @@ import static robocode.util.Utils.normalRelativeAngleDegrees;
  */
 public class Motherbrain extends AdvancedRobot
 {
-    public static final int TURN_LEFT = 0;
-    public static final int TURN_RIGHT = 1;
-
     public static final int MOVE_AHEAD = 1;
     public static final int MOVE_BACK = 1;
-
-    private int turnDir = TURN_LEFT;
 
     private int moveDir = MOVE_BACK;
 
     private String target;
+    private double targetDistance;
 
     /**
      * run: AndisRobot's default behavior
@@ -31,29 +27,39 @@ public class Motherbrain extends AdvancedRobot
         setAdjustRadarForGunTurn(true);
 
         while(true) {
-            setTurnRadarLeft(360);
-            if(moveDir == MOVE_BACK) {
-                setBack(300);
-            } else {
-                setAhead(300);
+            if(target == null) {
+                movemovemove();
             }
-            execute();
         }
+    }
+
+    public void movemovemove() {
+        setTurnRadarLeft(360);
+        if(moveDir == MOVE_BACK) {
+            setBack(300);
+        } else {
+            setAhead(300);
+        }
+        setTurnLeft(180);
+        execute();
     }
 
     /**
      * onScannedRobot: What to do when you see another robot
      */
     public void onScannedRobot(ScannedRobotEvent e) {
-        if(target != null) {
-            return;
+        if(target != null && getGunHeat() > 0) {
+            if(e.getDistance() >= targetDistance) {
+                return;
+            }
         }
         target = e.getName();
+        targetDistance = e.getDistance();
 
         // Calculate exact location of the robot
         double absoluteBearing = getHeading() + e.getBearing();
         double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
-
+        
         if(bearingFromGun > 0) {
             turnGunRight(Math.abs(bearingFromGun));
         } else {
@@ -61,24 +67,27 @@ public class Motherbrain extends AdvancedRobot
         }
 
         if(getOthers() > 2) {
-            fire(1);
+            if(getEnergy() < 50) {
+                fire(1);
+            } else {
+                fire(3);
+            }
         } else {
-            fire(3);
+            if(getEnergy() < 50) {
+                fire(1);
+            } else {
+                fire(3);
+            }
         }
 
         target = null;
     }
 
-    /**
-     * onHitWall: What to do when you hit a wall
-     */
     public void onHitWall(HitWallEvent e) {
         moveDir = (moveDir == 0) ? 1 : 0;
     }
 
     public void onHitRobot(HitRobotEvent event) {
-        setTurnLeft(40);
-        setBack(50);
-        execute();
+        moveDir = (moveDir == 0) ? 1 : 0;
     }
 }
