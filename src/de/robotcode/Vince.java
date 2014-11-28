@@ -21,7 +21,7 @@ public class Vince extends Robot
 
 		// Robot main loop
 		while(true) {
-			turnGunRight(40 * turnGunDirection);
+			turnGunRight(10);
 		}
 	}
 
@@ -31,14 +31,19 @@ public class Vince extends Robot
 	public void onScannedRobot(ScannedRobotEvent e) {
 		double absoluteBearing = getHeading() + e.getBearing();
 		double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
-		
-		fire(3);
 
-		/**if (getGunHeat() == 0) {
-			fire(e.getDistance() < 100 && getEnergy() > 50 ? 3 : 3);
-		}*/
-		
-		back(60 * moveDirection);
+		if (Math.abs(bearingFromGun) <= 3) {
+			turnGunRight(bearingFromGun);
+			if (getGunHeat() == 0) {
+				fire(3);
+				back(50 * moveDirection);
+			}
+		} else {
+			turnGunRight(bearingFromGun);
+		}
+		if (bearingFromGun == 0) {
+			scan();
+		}
 	}
 
 	public void onBulletHitBullet(BulletHitBulletEvent e) {
