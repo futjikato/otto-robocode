@@ -1,4 +1,4 @@
-package de.andirobot;
+package de.robotcode;
 import robocode.*;
 //import java.awt.Color;
 
