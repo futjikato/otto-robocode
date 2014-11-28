@@ -8,7 +8,7 @@ import java.awt.Color;
 /**
  * Vince - a robot by (your name here)
  */
-public class Vince extends Robot
+public class Vince extends AdvancedRobot
 {
 	int moveDirection = 1;
 	int turnGunDirection = 1;
@@ -18,10 +18,16 @@ public class Vince extends Robot
 	 */
 	public void run() {
 		setColors(Color.green, Color.green, Color.green, Color.green, Color.green); // body,gun,radar
+		
+		setAdjustGunForRobotTurn(true);
 
-		// Robot main loop
 		while(true) {
-			turnGunRight(10);
+			setMaxVelocity(Rules.MAX_VELOCITY);
+			setMaxTurnRate(Rules.MAX_TURN_RATE);
+			setTurnGunRight(Rules.GUN_TURN_RATE);
+			setBack(50 * moveDirection);
+			setTurnRight(5);
+			execute();
 		}
 	}
 
@@ -29,48 +35,50 @@ public class Vince extends Robot
 	 * onScannedRobot: What to do when you see another robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
+		if (getGunHeat() < 2.8) {
+			fire(getEnergy() > 50 ? 3 : 1.5);
+			setBack(50 * moveDirection);
+			execute();
+		}
+		
 		double absoluteBearing = getHeading() + e.getBearing();
 		double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
 
 		if (Math.abs(bearingFromGun) <= 3) {
 			turnGunRight(bearingFromGun);
 			if (getGunHeat() == 0) {
-				fire(3);
-				back(50 * moveDirection);
+				fire(getEnergy() > 50 ? 3 : 1.5);
+				setBack(50 * moveDirection);
+				execute();
 			}
 		} else {
 			turnGunRight(bearingFromGun);
 		}
+		// Generates another scan event if we see a robot.
+		// We only need to call this if the gun (and therefore radar)
+		// are not turning.  Otherwise, scan is called automatically.
 		if (bearingFromGun == 0) {
 			scan();
 		}
 	}
 
-	public void onBulletHitBullet(BulletHitBulletEvent e) {
-		if (getEnergy() <= 20) {
-			back(30 * moveDirection);
-		}
-	}
-
 	public void onHitByBullet(HitByBulletEvent e) {
-		turnRight(normalRelativeAngleDegrees(90 - (getHeading() - e.getHeading())));
-		back(50 * moveDirection);
+		setBack(50 * moveDirection);
+		setTurnRight(normalRelativeAngleDegrees(90 - (getHeading() - e.getHeading())));
+		execute();
 		scan();
 	}
 	
 	public void onHitRobot(HitRobotEvent e) {
 		double turnGunAmt = normalRelativeAngleDegrees(e.getBearing() + getHeading() - getGunHeading());
 
-		turnGunRight(turnGunAmt);
+		setTurnGunRight(turnGunAmt);
 		fire(3);
-		back(30 * moveDirection);
+		setBack(50 * moveDirection);
+		execute();
 	}
 	
-	/**
-	 * onHitWall: What to do when you hit a wall
-	 */
 	public void onHitWall(HitWallEvent e) {
-		// Replace the next line with any behavior you would like
 		moveDirection *= -1;
 	}	
 }
