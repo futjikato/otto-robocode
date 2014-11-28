@@ -10,25 +10,35 @@ import static robocode.util.Utils.normalRelativeAngleDegrees;
  */
 public class Motherbrain extends Robot
 {
-    private int turnDir = 0;
+    public static final int TURN_LEFT = 0;
+    public static final int TURN_RIGHT = 1;
 
-    private long lastHitBy = 0;
+    public static final int MOVE_AHEAD = 1;
+    public static final int MOVE_BACK = 1;
+
+    private int turnDir = TURN_LEFT;
+
+    private int moveDir = MOVE_BACK;
 
     /**
      * run: AndisRobot's default behavior
      */
     public void run() {
         setColors(Color.green, Color.green, Color.green);
-
+        setAdjustGunForRobotTurn(true);
         while(true) {
             if(getGunHeat() == 0) {
-                if(turnDir == 0) {
-                    turnLeft(10);
+                if(turnDir == TURN_LEFT) {
+                    turnGunLeft(10);
                 } else {
-                    turnLeft(10);
+                    turnGunRight(10);
                 }
             } else {
-                back(10);
+                if(moveDir == MOVE_BACK) {
+                    back(10);
+                } else {
+                    ahead(10);
+                }
             }
         }
     }
@@ -41,20 +51,20 @@ public class Motherbrain extends Robot
         double absoluteBearing = getHeading() + e.getBearing();
         double bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
 
-        if(e.getDistance() > 300) {
-            ahead(20);
+        if(e.getDistance() > 600) {
+            if(moveDir == MOVE_BACK) {
+                back(10);
+            } else {
+                ahead(10);
+            }
         } else {
             if (Math.abs(bearingFromGun) <= 2) {
-                if (getEnergy() < 50) {
-                    fire(1);
-                } else {
-                    fire(3);
-                }
+                fire(3);
             } else {
                 if (bearingFromGun < 0) {
-                    turnLeft(1);
+                    turnGunLeft(1);
                 } else {
-                    turnRight(1);
+                    turnGunRight(1);
                 }
             }
         }
@@ -64,15 +74,24 @@ public class Motherbrain extends Robot
      * onHitByBullet: What to do when you're hit by a bullet
      */
     public void onHitByBullet(HitByBulletEvent e) {
-        ahead(10);
-        turnDir = (turnDir == 0) ? 1 : 0;
+        // Calculate exact location of the robot
+        double absoluteBearing = getHeading() + e.getBearing();
+        if(Math.abs(absoluteBearing) <= 3) {
+            turnLeft(10);
+        }
+
+        if(moveDir == MOVE_BACK) {
+            back(10);
+        } else {
+            ahead(10);
+        }
     }
 
     /**
      * onHitWall: What to do when you hit a wall
      */
     public void onHitWall(HitWallEvent e) {
-        turnLeft(90);
+        moveDir = (moveDir == 0) ? 1 : 0;
     }
 
     public void onHitRobot(HitRobotEvent event) {
